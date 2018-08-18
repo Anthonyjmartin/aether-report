@@ -183,7 +183,7 @@ func textOutput(humanRead bool, inode bool) {
 // Output data for "json" format.
 func jsonOutput() ([]byte, error) {
 	diskDetails := getMounts()
-	return json.MarshalIndent(diskDetails, "", "  ")
+	return json.Marshal(diskDetails)
 }
 
 // Process data based on passed variables.
