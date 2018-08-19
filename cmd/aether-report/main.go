@@ -12,7 +12,6 @@ var (
 	diskHumanRead     bool
 	diskDisplayInodes bool
 	allOutputFmt      string
-	outputToFile      string
 )
 
 func main() {
@@ -22,7 +21,6 @@ func main() {
 	diskCommand.BoolVarP(&diskHumanRead, "humanread", "h", false, "Display disk storage as human-readable.")
 	diskCommand.BoolVarP(&diskDisplayInodes, "inode", "i", false, "Display disk Inode information")
 	allCommand.StringVarP(&allOutputFmt, "output", "o", "text", "Output format.")
-	flag.StringVarP(&outputToFile, "outfile", "f", "", "Relative or full path to file for output.")
 
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, `
@@ -49,10 +47,10 @@ Options:`)
 	switch os.Args[1] {
 	case "disk":
 		diskCommand.Parse(os.Args[2:])
-		hardware_check.RunDiskInfo(diskOutputFmt, outputToFile, diskHumanRead, diskDisplayInodes)
+		hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes)
 	case "all":
 		allCommand.Parse(os.Args[2:])
-		hardware_check.RunDiskInfo(allOutputFmt, outputToFile, diskHumanRead, diskDisplayInodes)
+		hardware_check.RunDiskInfo(allOutputFmt, diskHumanRead, diskDisplayInodes)
 	default:
 		flag.Usage()
 		os.Exit(1)

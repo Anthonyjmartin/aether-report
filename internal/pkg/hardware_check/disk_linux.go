@@ -19,14 +19,14 @@ type DiskBlocks struct {
 	Bfree    uint64 `json:"blocks_free"`
 	Bavail   uint64 `json:"blocks_avail"`
 	Bused    uint64 `json:"blocks_used"`
-	Bpercent int    `json:"blocks_percent"`
+	Bpercent string `json:"blocks_percent"`
 }
 
 type DiskInodes struct {
 	Inodes   uint64 `json:"inodes"`
 	Ifree    uint64 `json:"inodes_free"`
 	Iused    uint64 `json:"inodes_used"`
-	Ipercent int    `json:"inodes_percent"`
+	Ipercent string `json:"inodes_percent"`
 }
 type DiskDetails struct {
 	Name          string     `json:"name"`
@@ -111,19 +111,30 @@ func getMounts() []DiskDetails {
 					Bfree:    fs.Bfree,
 					Bavail:   fs.Bavail,
 					Bused:    fs.Blocks - fs.Bavail,
-					Bpercent: int(float64(fs.Blocks-fs.Bavail) / float64(fs.Blocks) * 100),
+					Bpercent: getPercent(fs.Blocks, fs.Bavail),
 				},
 				Inodes: DiskInodes{
 					Inodes:   fs.Files,
 					Ifree:    fs.Ffree,
 					Iused:    fs.Files - fs.Ffree,
-					Ipercent: int(float64(fs.Files-fs.Ffree) / float64(fs.Files) * 100),
+					Ipercent: getPercent(fs.Files, fs.Ffree),
 				},
 			}
 			diskDetails = append(diskDetails, mount)
 		}
 	}
 	return diskDetails
+}
+
+// Calculate percent for blocks and inodes.
+func getPercent(total uint64, avail uint64) (percent string) {
+	calc := int(float64(total-avail) / float64(total) * 100)
+	if calc >= 0 {
+		percent = strconv.Itoa(calc) + "%"
+	} else {
+		percent = "-%"
+	}
+	return
 }
 
 // Convert DiskDetails fields to human-readable formats.
@@ -165,22 +176,16 @@ func textOutput(humanRead bool, inode bool) {
 	for i := range diskDetails {
 		if inode {
 			diskI := diskDetails[i].Inodes
-			Ipercent := ""
-			if diskI.Ipercent < 0 {
-				Ipercent = "-"
-			} else {
-				Ipercent = strconv.Itoa(diskI.Ipercent) + "%"
-			}
-			fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskI.Inodes, diskI.Iused, diskI.Ifree, Ipercent, diskDetails[i].Name)
+			fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskI.Inodes, diskI.Iused, diskI.Ifree, diskI.Ipercent, diskDetails[i].Name)
 		} else {
 
 			diskB := diskDetails[i].Blocks
 			if humanRead {
 				fmt.Fprintf(w, "%s  \t%s  \t%s  \t%s  \t%s  \t%s  \n", diskDetails[i].Partition, convertSize(diskB.Blocks, diskB.Bsize),
 					convertSize(diskB.Bused, diskB.Bsize), convertSize(diskB.Bavail, diskB.Bsize),
-					strconv.Itoa(diskB.Bpercent)+"%", diskDetails[i].Name)
+					diskB.Bpercent, diskDetails[i].Name)
 			} else {
-				fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskB.Blocks, diskB.Bused, diskB.Bavail, strconv.Itoa(diskB.Bpercent)+"%", diskDetails[i].Name)
+				fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskB.Blocks, diskB.Bused, diskB.Bavail, diskB.Bpercent, diskDetails[i].Name)
 			}
 		}
 	}
@@ -193,9 +198,9 @@ func jsonOutput() ([]byte, error) {
 }
 
 // Process data based on passed variables.
-func RunDiskInfo(outputFmt string, fileOut string, humanRead bool, inode bool) (jsonReturn []byte, err error) {
+func RunDiskInfo(outputFmt string, humanRead bool, inode bool) (jsonReturn []byte, err error) {
 	if humanRead && inode {
-		fmt.Println("Error: Cannot use both -h and -i  flags.")
+		fmt.Fprintln(os.Stderr, "Error: Cannot use both -h and -i  flags.")
 		return
 	}
 	if outputFmt == "text" {
