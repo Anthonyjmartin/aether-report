@@ -165,7 +165,13 @@ func textOutput(humanRead bool, inode bool) {
 	for i := range diskDetails {
 		if inode {
 			diskI := diskDetails[i].Inodes
-			fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskI.Inodes, diskI.Iused, diskI.Ifree, strconv.Itoa(diskI.Ipercent)+"%", diskDetails[i].Name)
+			Ipercent := ""
+			if diskI.Ipercent < 0 {
+				Ipercent = "-"
+			} else {
+				Ipercent = strconv.Itoa(diskI.Ipercent) + "%"
+			}
+			fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskI.Inodes, diskI.Iused, diskI.Ifree, Ipercent, diskDetails[i].Name)
 		} else {
 
 			diskB := diskDetails[i].Blocks
