@@ -200,7 +200,7 @@ func jsonOutput() ([]byte, error) {
 // Process data based on passed variables.
 func RunDiskInfo(outputFmt string, humanRead bool, inode bool) (jsonReturn []byte, err error) {
 	if humanRead && inode {
-		fmt.Fprintln(os.Stderr, "Error: Cannot use both -h and -i  flags.")
+		fmt.Fprintln(os.Stderr, "\nError: Cannot use both -h and -i  flags.\n\nRun 'aether-report COMMAND --help' for more information on a command.")
 		return
 	}
 	if outputFmt == "text" {
