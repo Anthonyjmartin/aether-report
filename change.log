@@ -1,6 +1,7 @@
 
-UNRELEASED
+0.1.0
 
+  * Configure for rpm build and rewrite CLI section.
   * Update error message for using -i and -h with disk.ˆ
   * main.go - Removed output to file flag.
     disk_linux.go - Removed output to file flag. Changed getting the percentage of a disk to a function to cover issues where a negative is produced.
@@ -13,6 +14,6 @@ UNRELEASED
 
   - Anthony Martin <anthony.j.martin142@gmail.com>
 
--- Anthony Martin <anthony.j.martin142@gmail.com>; Sun, 19 Aug 2018 16:53:19 -0400
+-- Anthony Martin <anthony.j.martin142@gmail.com>; Tue, 21 Aug 2018 14:36:49 -0400
 
 
