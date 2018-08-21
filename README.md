@@ -11,7 +11,7 @@ Outline and working plan for Aether-report app.
 
 Hardware Checks
 ---------------
-- [] Disks
+- [ x ] Disks
 - [] CPU
 - [] Memory
 - [] Network

@@ -20,6 +20,7 @@ type DiskBlocks struct {
 	Bavail   uint64 `json:"blocks_avail"`
 	Bused    uint64 `json:"blocks_used"`
 	Bpercent string `json:"blocks_percent"`
+	Balert   string `json:"blocks_alert"`
 }
 
 type DiskInodes struct {
@@ -27,6 +28,7 @@ type DiskInodes struct {
 	Ifree    uint64 `json:"inodes_free"`
 	Iused    uint64 `json:"inodes_used"`
 	Ipercent string `json:"inodes_percent"`
+	Ialert   string `json:"inodes_alert"`
 }
 type DiskDetails struct {
 	Name          string     `json:"name"`
@@ -64,11 +66,13 @@ var excludedFsTypes = []string{
 	"hugetlbfs",
 	"fuse",
 	"config",
+	"configfs",
 	"pstore",
 	"securityfs",
 	"nsfs",
 	"selinuxfs",
 	"tracefs",
+	"overlay",
 }
 
 // Get list of mounted filesystems
@@ -96,8 +100,8 @@ func getMounts() []DiskDetails {
 			fs := syscall.Statfs_t{}
 			err := syscall.Statfs(data[1], &fs)
 			if err != nil {
-				fmt.Println(err)
-				return nil
+				//fmt.Println(err)  // Uncomment when debugging.
+				continue
 			}
 
 			mount := DiskDetails{
@@ -156,7 +160,7 @@ func convertSize(Blocks uint64, Bsize int64) (sizeAsString string) {
 }
 
 // Output data for "text" format.
-func textOutput(humanRead bool, inode bool) {
+func textOutput(humanRead bool, inode bool) error {
 	fmt.Println("#####   Disk Usage Stats   #####")
 
 	w := new(tabwriter.Writer)
@@ -170,7 +174,7 @@ func textOutput(humanRead bool, inode bool) {
 	case humanRead:
 		fmt.Fprintln(w, "Filesystem  \tSize  \tUsed  \tAvail  \tUse%  \tMount")
 	default:
-		fmt.Fprintln(w, "Filesystem  \tBlocks  \tUsed  \tAvail  \tUse%  \tMount")
+		fmt.Fprintln(w, "Filesystem  \tBlocks  \tUsed  \tAvail  \tUse%  \tMount\t BlockSize")
 	}
 
 	for i := range diskDetails {
@@ -185,10 +189,11 @@ func textOutput(humanRead bool, inode bool) {
 					convertSize(diskB.Bused, diskB.Bsize), convertSize(diskB.Bavail, diskB.Bsize),
 					diskB.Bpercent, diskDetails[i].Name)
 			} else {
-				fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskB.Blocks, diskB.Bused, diskB.Bavail, diskB.Bpercent, diskDetails[i].Name)
+				fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \t%d  \n", diskDetails[i].Partition, diskB.Blocks, diskB.Bused, diskB.Bavail, diskB.Bpercent, diskDetails[i].Name, diskB.Bsize)
 			}
 		}
 	}
+	return nil
 }
 
 // Output data for "json" format.
@@ -198,14 +203,14 @@ func jsonOutput() ([]byte, error) {
 }
 
 // Process data based on passed variables.
-func RunDiskInfo(outputFmt string, humanRead bool, inode bool) (jsonReturn []byte, err error) {
+func RunDiskInfo(outputFmt string, humanRead bool, inode bool) (textReturn error, jsonReturn []byte, err error) {
 	if humanRead && inode {
 		fmt.Fprintln(os.Stderr, "\nError: Cannot use both -h and -i  flags.\n\nRun 'aether-report COMMAND --help' for more information on a command.")
 		return
 	}
 	if outputFmt == "text" {
-		textOutput(humanRead, inode)
-		jsonReturn, err = []byte(``), nil
+		textReturn = textOutput(humanRead, inode)
+		return
 	} else if outputFmt == "json" {
 		jsonReturn, err = jsonOutput()
 		fmt.Println(string(jsonReturn))

@@ -2,57 +2,72 @@ package main
 
 import (
 	"fmt"
-	flag "github.com/ogier/pflag"
+	"github.com/urfave/cli"
 	"gitlab.com/anthony.j.martin/aether-report/internal/pkg/hardware_check"
 	"os"
+	"time"
 )
 
 var (
 	diskOutputFmt     string
 	diskHumanRead     bool
 	diskDisplayInodes bool
-	allOutputFmt      string
+	version           string
+	//allOutputFmt      string
+	//versionCheck      bool
 )
 
+func init() {
+	cli.VersionFlag = cli.BoolFlag{Name: "version, V"}
+
+	cli.VersionPrinter = func(c *cli.Context) {
+		fmt.Fprintf(c.App.Writer, "version=%s\n", c.App.Version)
+	}
+}
+
 func main() {
-	diskCommand := flag.NewFlagSet("disk", flag.ExitOnError)
-	allCommand := flag.NewFlagSet("all", flag.ExitOnError)
-	diskCommand.StringVarP(&diskOutputFmt, "output", "o", "text", "Output format.")
-	diskCommand.BoolVarP(&diskHumanRead, "humanread", "h", false, "Display disk storage as human-readable.")
-	diskCommand.BoolVarP(&diskDisplayInodes, "inode", "i", false, "Display disk Inode information")
-	allCommand.StringVarP(&allOutputFmt, "output", "o", "text", "Output format.")
+	app := cli.NewApp()
+	app.Name = "aether-report"
+	app.Version = version
+	app.Compiled = time.Now()
+	app.Authors = []cli.Author{
+		{
+			Name:  "Anthony Martin",
+			Email: "anthony.j.martin142@gmail.com",
+		},
+	}
+	app.Usage = "Collect and report system information."
+	app.HideHelp = false
+	app.HideVersion = false
 
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, `
-Usage: aether-report [OPTIONS] COMMAND [CMDOPTIONS]
-
-Outputs or sends system information. (eg. Disk, CPU, OS info)
-
-Commands:
-  all    Run all hardware and software checks.
-  disk   Run disk hardware check.
-
-Options:`)
-		flag.PrintDefaults()
-		fmt.Println()
-		fmt.Fprintln(os.Stderr, "Run 'aether-report COMMAND --help' for more information on a command.")
-		fmt.Println()
+	app.Commands = []cli.Command{
+		{
+			Name:     "disk",
+			Category: "Hardware Checks",
+			Usage:    "Runs report of disk.",
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "humanread, H", Destination: &diskHumanRead, Usage: "Display disk storage as human-readable."},
+				cli.BoolFlag{Name: "inode, i", Destination: &diskDisplayInodes, Usage: "Display inode information."},
+				cli.StringFlag{Name: "output, o", Value: "text", Destination: &diskOutputFmt, Usage: "Chose output `FORMAT` <text|json>."},
+			},
+			Action: func(c *cli.Context) error {
+				hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes)
+				return nil
+			},
+		},
+		{
+			Name:  "all",
+			Usage: "Runs report on all checks.",
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "humanread, H", Destination: &diskHumanRead, Usage: "Display disk storage as human-readable."},
+				cli.StringFlag{Name: "output, o", Value: "text", Destination: &diskOutputFmt, Usage: "Chose output `FORMAT` [(text)|json]."},
+			},
+			Action: func(c *cli.Context) error {
+				hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes)
+				return nil
+			},
+		},
 	}
 
-	if len(os.Args) < 2 {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	switch os.Args[1] {
-	case "disk":
-		diskCommand.Parse(os.Args[2:])
-		hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes)
-	case "all":
-		allCommand.Parse(os.Args[2:])
-		hardware_check.RunDiskInfo(allOutputFmt, diskHumanRead, diskDisplayInodes)
-	default:
-		flag.Usage()
-		os.Exit(1)
-	}
+	_ = app.Run(os.Args)
 }
