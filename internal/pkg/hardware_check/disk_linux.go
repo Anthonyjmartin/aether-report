@@ -104,6 +104,9 @@ func getMounts() []DiskDetails {
 				continue
 			}
 
+			bPercent, _ := getPercent(fs.Blocks, fs.Bavail)
+			iPercent, _ := getPercent(fs.Files, fs.Ffree)
+			blockAlert, inodeAlert := checkAlert(fs)
 			mount := DiskDetails{
 				Name:          data[1],
 				Partition:     data[0],
@@ -115,13 +118,15 @@ func getMounts() []DiskDetails {
 					Bfree:    fs.Bfree,
 					Bavail:   fs.Bavail,
 					Bused:    fs.Blocks - fs.Bavail,
-					Bpercent: getPercent(fs.Blocks, fs.Bavail),
+					Bpercent: bPercent,
+					Balert:   blockAlert,
 				},
 				Inodes: DiskInodes{
 					Inodes:   fs.Files,
 					Ifree:    fs.Ffree,
 					Iused:    fs.Files - fs.Ffree,
-					Ipercent: getPercent(fs.Files, fs.Ffree),
+					Ipercent: iPercent,
+					Ialert:   inodeAlert,
 				},
 			}
 			diskDetails = append(diskDetails, mount)
@@ -131,12 +136,35 @@ func getMounts() []DiskDetails {
 }
 
 // Calculate percent for blocks and inodes.
-func getPercent(total uint64, avail uint64) (percent string) {
-	calc := int(float64(total-avail) / float64(total) * 100)
-	if calc >= 0 {
-		percent = strconv.Itoa(calc) + "%"
+func getPercent(total uint64, avail uint64) (sPercent string, iPercent int) {
+	iPercent = int(float64(total-avail) / float64(total) * 100)
+	if iPercent >= 0 {
+		sPercent = strconv.Itoa(iPercent) + "%"
 	} else {
-		percent = "-%"
+		sPercent = "-%"
+	}
+	return
+}
+
+// Determine if storage needs to have a warning, alert, or is ok.
+func checkAlert(fs syscall.Statfs_t) (blockAlert string, inodeAlert string) {
+	_, bPercent := getPercent(fs.Blocks, fs.Bavail)
+	bAvail := fs.Bsize * int64(fs.Bavail)
+	_, iPercent := getPercent(fs.Files, fs.Ffree)
+
+	switch {
+	case bPercent < 90 || bAvail >= 20*GB && bPercent < 95:
+		blockAlert = "ok"
+	case bPercent >= 90 && bPercent < 95:
+		blockAlert = "warn"
+	default:
+		blockAlert = "alert"
+	}
+
+	if iPercent >= 95 {
+		inodeAlert = "alert"
+	} else {
+		inodeAlert = "ok"
 	}
 	return
 }
@@ -168,6 +196,7 @@ func textOutput(humanRead bool, inode bool) error {
 	defer w.Flush()
 
 	diskDetails := getMounts()
+
 	switch {
 	case inode:
 		fmt.Fprintln(w, "Filesystem  \tInodes  \tUsed  \tAvail  \tUse%  \tMount")
