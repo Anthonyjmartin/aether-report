@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gitlab.com/anthony.j.martin/aether-report/internal/pkg/util_funcs"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -37,6 +38,13 @@ type DiskDetails struct {
 	ReadOnly      bool       `json:"read_only"`
 	Blocks        DiskBlocks `json:"disk_blocks"`
 	Inodes        DiskInodes `json:"disk_inodes"`
+}
+
+type ValidDisks struct {
+	Partition string `json:"partition"`
+	Mount     string `json:"mount"`
+	Type      string `json:"type"`
+	Options   string `json:"options"`
 }
 
 const (
@@ -76,81 +84,125 @@ var excludedFsTypes = []string{
 }
 
 // Get list of mounted filesystems
-func getMounts() []DiskDetails {
+func getMounts(diskFile string, testDiskInfo syscall.Statfs_t) ([]DiskDetails, error) {
 	var diskDetails []DiskDetails
-	path := "/etc/mtab"
-	inFile, err := os.Open(path)
-	if err != nil {
-		return nil
+	var inFile io.Reader
+
+	testCheck := syscall.Statfs_t{}
+	if testDiskInfo == testCheck {
+		inFile, err := os.Open(diskFile)
+
+		if err != nil {
+			return nil, err
+		}
+		defer inFile.Close()
+	} else {
+		inFile = strings.NewReader(diskFile)
 	}
-	defer inFile.Close()
-	skipMountRegex, err := regexp.Compile("^/(proc|snap)/") // We do not want reports on virtual filesystems.
+
+	validDisks, err := parseDiskFile(inFile)
+	if err != nil {
+		return nil, err
+	}
+	for i := range validDisks {
+		data := validDisks[i]
+		ro := true
+		opts := strings.Split(data.Options, ",")
+		for _, opt := range opts {
+			if opt == "rw" {
+				ro = false
+				break
+			}
+		}
+		fs, err := getDiskInfo(data.Mount, testDiskInfo)
+		if err != nil {
+			//fmt.Println(err)  // Uncomment when debugging.
+			continue
+		}
+
+		bPercent, _ := getPercent(fs.Blocks, fs.Bavail)
+		iPercent, _ := getPercent(fs.Files, fs.Ffree)
+		blockAlert, inodeAlert := checkAlert(fs.Blocks, fs.Bavail, fs.Files, fs.Ffree, fs.Bsize)
+		mount := DiskDetails{
+			Name:          data.Mount,
+			Partition:     data.Partition,
+			PartitionType: data.Type,
+			ReadOnly:      ro,
+			Blocks: DiskBlocks{
+				Blocks:   fs.Blocks,
+				Bsize:    fs.Bsize,
+				Bfree:    fs.Bfree,
+				Bavail:   fs.Bavail,
+				Bused:    fs.Blocks - fs.Bavail,
+				Bpercent: bPercent,
+				Balert:   blockAlert,
+			},
+			Inodes: DiskInodes{
+				Inodes:   fs.Files,
+				Ifree:    fs.Ffree,
+				Iused:    fs.Files - fs.Ffree,
+				Ipercent: iPercent,
+				Ialert:   inodeAlert,
+			},
+		}
+		diskDetails = append(diskDetails, mount)
+	}
+	return diskDetails, nil
+}
+
+// Return syscall.Statfs_t struct with drive info. Mainly in its own func for testing purposes.
+func getDiskInfo(mount string, fakeDiskInfo syscall.Statfs_t) (fs syscall.Statfs_t, err error) {
+	fs = syscall.Statfs_t{}
+	if fakeDiskInfo == fs {
+		err = syscall.Statfs(mount, &fs)
+		return
+	} else {
+		fs, err = fakeDiskInfo, nil
+		return
+
+	}
+}
+
+//  Return strings from file that contain valid disk information.
+func parseDiskFile(inFile io.Reader) ([]ValidDisks, error) {
+	var validDisks []ValidDisks
+
+	skipMountRegex, _ := regexp.Compile("^/(proc|snap)/") // We do not want reports on virtual filesystems.
+
 	scanner := bufio.NewScanner(inFile)
 	for scanner.Scan() {
 		data := strings.Fields(scanner.Text())
 		if !skipMountRegex.MatchString(data[1]) && !util_funcs.StringInSlice(data[2], excludedFsTypes) {
-			ro := true
-			opts := strings.Split(data[3], ",")
-			for _, opt := range opts {
-				if opt == "rw" {
-					ro = false
-					break
-				}
+			diskString := ValidDisks{
+				Partition: data[0],
+				Mount:     data[1],
+				Type:      data[2],
+				Options:   data[3],
 			}
-			fs := syscall.Statfs_t{}
-			err := syscall.Statfs(data[1], &fs)
-			if err != nil {
-				//fmt.Println(err)  // Uncomment when debugging.
-				continue
-			}
-
-			bPercent, _ := getPercent(fs.Blocks, fs.Bavail)
-			iPercent, _ := getPercent(fs.Files, fs.Ffree)
-			blockAlert, inodeAlert := checkAlert(fs)
-			mount := DiskDetails{
-				Name:          data[1],
-				Partition:     data[0],
-				PartitionType: data[2],
-				ReadOnly:      ro,
-				Blocks: DiskBlocks{
-					Blocks:   fs.Blocks,
-					Bsize:    fs.Bsize,
-					Bfree:    fs.Bfree,
-					Bavail:   fs.Bavail,
-					Bused:    fs.Blocks - fs.Bavail,
-					Bpercent: bPercent,
-					Balert:   blockAlert,
-				},
-				Inodes: DiskInodes{
-					Inodes:   fs.Files,
-					Ifree:    fs.Ffree,
-					Iused:    fs.Files - fs.Ffree,
-					Ipercent: iPercent,
-					Ialert:   inodeAlert,
-				},
-			}
-			diskDetails = append(diskDetails, mount)
+			validDisks = append(validDisks, diskString)
 		}
 	}
-	return diskDetails
+	return validDisks, nil
 }
 
 // Calculate percent for blocks and inodes.
-func getPercent(total uint64, avail uint64) (sPercent string, iPercent int) {
+func getPercent(total, avail uint64) (sPercent string, iPercent int) {
 	iPercent = int(float64(total-avail) / float64(total) * 100)
-	if iPercent >= 0 {
+	switch {
+	case iPercent >= 0:
 		sPercent = strconv.Itoa(iPercent) + "%"
-	} else {
+	default:
+		iPercent = 0
 		sPercent = "-%"
 	}
 	return
 }
 
 // Determine if storage needs to have a warning, alert, or is ok.
-func checkAlert(fs syscall.Statfs_t) (blockAlert string, inodeAlert string) {
-	_, bPercent := getPercent(fs.Blocks, fs.Bavail)
-	bAvail := fs.Bsize * int64(fs.Bavail)
-	_, iPercent := getPercent(fs.Files, fs.Ffree)
+func checkAlert(blocks, blocksAvail, inodes, inodesFree uint64, blockSize int64) (blockAlert string, inodeAlert string) {
+	_, bPercent := getPercent(blocks, blocksAvail)
+	bAvail := blockSize * int64(blocksAvail)
+	_, iPercent := getPercent(inodes, inodesFree)
 
 	switch {
 	case bPercent < 90 || bAvail >= 20*GB && bPercent < 95:
@@ -188,14 +240,20 @@ func convertSize(Blocks uint64, Bsize int64) (sizeAsString string) {
 }
 
 // Output data for "text" format.
-func textOutput(humanRead bool, inode bool) error {
+func textOutput(humanRead, inode bool, diskFile string, testDiskInfo syscall.Statfs_t) error {
+	if humanRead && inode {
+		return fmt.Errorf("can not use humanRead and inode together")
+	}
 	fmt.Println("#####   Disk Usage Stats   #####")
 
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 2, 4, 0, ' ', 0)
 	defer w.Flush()
 
-	diskDetails := getMounts()
+	diskDetails, err := getMounts(diskFile, testDiskInfo)
+	if err != nil {
+		return err
+	}
 
 	switch {
 	case inode:
@@ -225,23 +283,21 @@ func textOutput(humanRead bool, inode bool) error {
 	return nil
 }
 
-// Output data for "json" format.
-func jsonOutput() ([]byte, error) {
-	diskDetails := getMounts()
-	return json.Marshal(diskDetails)
-}
-
 // Process data based on passed variables.
-func RunDiskInfo(outputFmt string, humanRead bool, inode bool) (textReturn error, jsonReturn []byte, err error) {
+func RunDiskInfo(outputFmt string, humanRead, inode bool, diskFile string, fakeDiskInfo syscall.Statfs_t) (jsonReturn []byte, err, textReturn error) {
 	if humanRead && inode {
-		fmt.Fprintln(os.Stderr, "\nError: Cannot use both -h and -i  flags.\n\nRun 'aether-report COMMAND --help' for more information on a command.")
+		err = fmt.Errorf("\nError: Cannot use both -h and -i  flags.\n\nRun 'aether-report COMMAND --help' for more information on a command.")
 		return
 	}
 	if outputFmt == "text" {
-		textReturn = textOutput(humanRead, inode)
+		textReturn = textOutput(humanRead, inode, diskFile, fakeDiskInfo)
 		return
 	} else if outputFmt == "json" {
-		jsonReturn, err = jsonOutput()
+		jsonData, err := getMounts(diskFile, fakeDiskInfo)
+		if err != nil {
+			return nil, err, nil
+		}
+		jsonReturn, err = json.Marshal(jsonData)
 		fmt.Println(string(jsonReturn))
 	}
 	return

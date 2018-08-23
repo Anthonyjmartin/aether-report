@@ -5,6 +5,7 @@ import (
 	"github.com/urfave/cli"
 	"gitlab.com/anthony.j.martin/aether-report/internal/pkg/hardware_check"
 	"os"
+	"syscall"
 	"time"
 )
 
@@ -13,8 +14,6 @@ var (
 	diskHumanRead     bool
 	diskDisplayInodes bool
 	version           string
-	//allOutputFmt      string
-	//versionCheck      bool
 )
 
 func init() {
@@ -51,7 +50,7 @@ func main() {
 				cli.StringFlag{Name: "output, o", Value: "text", Destination: &diskOutputFmt, Usage: "Chose output `FORMAT` <text|json>."},
 			},
 			Action: func(c *cli.Context) error {
-				hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes)
+				hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes, "/etc/mtab", syscall.Statfs_t{})
 				return nil
 			},
 		},
@@ -63,7 +62,7 @@ func main() {
 				cli.StringFlag{Name: "output, o", Value: "text", Destination: &diskOutputFmt, Usage: "Chose output `FORMAT` [(text)|json]."},
 			},
 			Action: func(c *cli.Context) error {
-				hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes)
+				hardware_check.RunDiskInfo(diskOutputFmt, diskHumanRead, diskDisplayInodes, "/etc/mtab", syscall.Statfs_t{})
 				return nil
 			},
 		},
