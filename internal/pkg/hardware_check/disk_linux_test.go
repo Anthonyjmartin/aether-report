@@ -336,7 +336,16 @@ func Test_getMounts(t *testing.T) {
 		{
 			name: "Return first error",
 			args: args{
-				diskFile:     "",
+				diskFile:     "/fake/test",
+				testDiskInfo: syscall.Statfs_t{},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Return file error",
+			args: args{
+				diskFile:     "/",
 				testDiskInfo: syscall.Statfs_t{},
 			},
 			want:    nil,
@@ -406,7 +415,7 @@ func Test_textOutput(t *testing.T) {
 			args: args{
 				humanRead:    false,
 				inode:        false,
-				diskFile:     "",
+				diskFile:     "/fake/test",
 				testDiskInfo: syscall.Statfs_t{},
 			},
 			wantErr: true,
@@ -543,7 +552,7 @@ func TestRunDiskInfo(t *testing.T) {
 				outputFmt:    "json",
 				humanRead:    false,
 				inode:        false,
-				diskFile:     "",
+				diskFile:     "/fake/test",
 				fakeDiskInfo: syscall.Statfs_t{},
 			},
 			wantJsonReturn: nil,

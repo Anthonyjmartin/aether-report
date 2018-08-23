@@ -86,24 +86,32 @@ var excludedFsTypes = []string{
 // Get list of mounted filesystems
 func getMounts(diskFile string, testDiskInfo syscall.Statfs_t) ([]DiskDetails, error) {
 	var diskDetails []DiskDetails
-	var inFile io.Reader
+	var validDisks []ValidDisks
 
-	testCheck := syscall.Statfs_t{}
-	if testDiskInfo == testCheck {
+	if strings.HasPrefix(diskFile, "/") {
 		inFile, err := os.Open(diskFile)
-
 		if err != nil {
 			return nil, err
 		}
 		defer inFile.Close()
+		validDisk, err := parseDiskFile(inFile)
+		if err != nil {
+			return nil, err
+		}
+		for i := range validDisk {
+			validDisks = append(validDisks, validDisk[i])
+		}
 	} else {
-		inFile = strings.NewReader(diskFile)
+		inFile := strings.NewReader(diskFile)
+		validDisk, err := parseDiskFile(inFile)
+		if err != nil {
+			return nil, err
+		}
+		for i := range validDisk {
+			validDisks = append(validDisks, validDisk[i])
+		}
 	}
 
-	validDisks, err := parseDiskFile(inFile)
-	if err != nil {
-		return nil, err
-	}
 	for i := range validDisks {
 		data := validDisks[i]
 		ro := true
@@ -116,7 +124,6 @@ func getMounts(diskFile string, testDiskInfo syscall.Statfs_t) ([]DiskDetails, e
 		}
 		fs, err := getDiskInfo(data.Mount, testDiskInfo)
 		if err != nil {
-			//fmt.Println(err)  // Uncomment when debugging.
 			continue
 		}
 
@@ -171,7 +178,8 @@ func parseDiskFile(inFile io.Reader) ([]ValidDisks, error) {
 
 	scanner := bufio.NewScanner(inFile)
 	for scanner.Scan() {
-		data := strings.Fields(scanner.Text())
+		line := scanner.Text()
+		data := strings.Fields(line)
 		if !skipMountRegex.MatchString(data[1]) && !util_funcs.StringInSlice(data[2], excludedFsTypes) {
 			diskString := ValidDisks{
 				Partition: data[0],
@@ -181,6 +189,10 @@ func parseDiskFile(inFile io.Reader) ([]ValidDisks, error) {
 			}
 			validDisks = append(validDisks, diskString)
 		}
+	}
+	if len(validDisks) == 0 {
+		err := fmt.Errorf("no disk found")
+		return nil, err
 	}
 	return validDisks, nil
 }

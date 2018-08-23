@@ -9,7 +9,7 @@ docker run --rm -i -v $PWD:/go/src/gitlab.com/anthony.j.martin/aether-report aet
 
 # Build the RPM
 docker build --rm -t aether-report-rpm -f Dockerfile.RPM .
-docker run --rm -i -v $PWD:/go/src/gitlab.com/anthony.j.martin/aether-report aether-report-rpm go-bin-rpm generate -a amd64 -o build/linux/amd64/aether-report.rpm --version ${APPVER}
+docker run --rm -i -v $PWD:/go/src/gitlab.com/anthony.j.martin/aether-report aether-report-rpm go-bin-rpm generate -a amd64 -o build/linux/amd64/aether-report-${APPVER}.rpm --version ${APPVER}
 #docker rmi aether-report-rpm
 
 #GOOS=linux go build -a -o build/linux/amd64/aether-report -ldflags="-X main.version=${APPVER}"  cmd/aether-report/main.go
