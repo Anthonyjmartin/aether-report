@@ -1,0 +1,19 @@
+
+0.1.0
+
+  * Configure for rpm build and rewrite CLI section.
+  * Update error message for using -i and -h with disk.ˆ
+  * main.go - Removed output to file flag.
+    disk_linux.go - Removed output to file flag. Changed getting the percentage of a disk to a function to cover issues where a negative is produced.
+  * main.go - Modify Usage/help output and configured subcommands.
+    disk_linux.go - Modified Inode percent output.
+  * Changed json output to not indent output.
+  * Initial version of disk check complete (still missing output to file config).
+  * Delete system_report
+  * Initial commit
+
+  - Anthony Martin <anthony.j.martin142@gmail.com>
+
+-- Anthony Martin <anthony.j.martin142@gmail.com>; Tue, 21 Aug 2018 14:36:49 -0400
+
+
