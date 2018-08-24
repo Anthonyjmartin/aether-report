@@ -66,6 +66,14 @@ func main() {
 				return nil
 			},
 		},
+		{
+			Name:  "report",
+			Usage: "Runs all checks and reports back to configured aether-station system.",
+			Action: func(c *cli.Context) error {
+				fmt.Println("This is a place holder as aether-station is still a WIP.")
+				return nil
+			},
+		},
 	}
 
 	_ = app.Run(os.Args)
