@@ -14,6 +14,13 @@ import (
 	"text/tabwriter"
 )
 
+type ValidDisks struct {
+	Partition string `json:"partition"`
+	Mount     string `json:"mount"`
+	Type      string `json:"type"`
+	Options   string `json:"options"`
+}
+
 type DiskBlocks struct {
 	Blocks   uint64 `json:"blocks"`
 	Bsize    int64  `json:"block_size"`
@@ -31,6 +38,7 @@ type DiskInodes struct {
 	Ipercent string `json:"inodes_percent"`
 	Ialert   string `json:"inodes_alert"`
 }
+
 type DiskDetails struct {
 	Name          string     `json:"name"`
 	Partition     string     `json:"partition"`
@@ -40,11 +48,34 @@ type DiskDetails struct {
 	Inodes        DiskInodes `json:"disk_inodes"`
 }
 
-type ValidDisks struct {
-	Partition string `json:"partition"`
-	Mount     string `json:"mount"`
-	Type      string `json:"type"`
-	Options   string `json:"options"`
+// Convert DiskDetails fields to human-readable formats.
+func (d DiskDetails) humanReadable(metric string) (sizeAsString string) {
+	var sizedBlocks float64
+
+	switch {
+	case metric == "total":
+		sizedBlocks = float64(d.Blocks.Blocks * uint64(d.Blocks.Bsize))
+	case metric == "used":
+		sizedBlocks = float64(d.Blocks.Bused * uint64(d.Blocks.Bsize))
+	case metric == "available":
+		sizedBlocks = float64(d.Blocks.Bavail * uint64(d.Blocks.Bsize))
+	default:
+		sizedBlocks = float64(d.Blocks.Blocks * uint64(d.Blocks.Bsize))
+	}
+
+	switch {
+	case sizedBlocks >= TB:
+		sizeAsString = fmt.Sprintf("%.2fTB", sizedBlocks/float64(TB))
+	case sizedBlocks >= GB:
+		sizeAsString = fmt.Sprintf("%.2fGB", sizedBlocks/float64(GB))
+	case sizedBlocks >= MB:
+		sizeAsString = fmt.Sprintf("%.2fMB", sizedBlocks/float64(MB))
+	case sizedBlocks >= KB:
+		sizeAsString = fmt.Sprintf("%.2fKB", sizedBlocks/float64(KB))
+	default:
+		sizeAsString = fmt.Sprintf("%.2fB", sizedBlocks)
+	}
+	return sizeAsString
 }
 
 const (
@@ -233,24 +264,6 @@ func checkAlert(blocks, blocksAvail, inodes, inodesFree uint64, blockSize int64)
 	return
 }
 
-// Convert DiskDetails fields to human-readable formats.
-func convertSize(Blocks uint64, Bsize int64) (sizeAsString string) {
-	sizedBlocks := float64(Blocks * uint64(Bsize))
-	switch {
-	case sizedBlocks >= TB:
-		sizeAsString = fmt.Sprintf("%.2fTB", sizedBlocks/float64(TB))
-	case sizedBlocks >= GB:
-		sizeAsString = fmt.Sprintf("%.2fGB", sizedBlocks/float64(GB))
-	case sizedBlocks >= MB:
-		sizeAsString = fmt.Sprintf("%.2fMB", sizedBlocks/float64(MB))
-	case sizedBlocks >= KB:
-		sizeAsString = fmt.Sprintf("%.2fKB", sizedBlocks/float64(KB))
-	default:
-		sizeAsString = fmt.Sprintf("%.2fB", sizedBlocks)
-	}
-	return sizeAsString
-}
-
 // Output data for "text" format.
 func textOutput(humanRead, inode bool, diskFile string, testDiskInfo syscall.Statfs_t) error {
 	if humanRead && inode {
@@ -277,18 +290,19 @@ func textOutput(humanRead, inode bool, diskFile string, testDiskInfo syscall.Sta
 	}
 
 	for i := range diskDetails {
+		d := diskDetails[i]
+		dI := d.Inodes
+		dB := d.Blocks
 		if inode {
-			diskI := diskDetails[i].Inodes
-			fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n", diskDetails[i].Partition, diskI.Inodes, diskI.Iused, diskI.Ifree, diskI.Ipercent, diskDetails[i].Name)
+			fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \n",
+				d.Partition, dI.Inodes, dI.Iused, dI.Ifree, dI.Ipercent, d.Name)
 		} else {
-
-			diskB := diskDetails[i].Blocks
 			if humanRead {
-				fmt.Fprintf(w, "%s  \t%s  \t%s  \t%s  \t%s  \t%s  \n", diskDetails[i].Partition, convertSize(diskB.Blocks, diskB.Bsize),
-					convertSize(diskB.Bused, diskB.Bsize), convertSize(diskB.Bavail, diskB.Bsize),
-					diskB.Bpercent, diskDetails[i].Name)
+				fmt.Fprintf(w, "%s  \t%s  \t%s  \t%s  \t%s  \t%s  \n",
+					d.Partition, d.humanReadable("total"), d.humanReadable("used"), d.humanReadable("available"), dB.Bpercent, d.Name)
 			} else {
-				fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \t%d  \n", diskDetails[i].Partition, diskB.Blocks, diskB.Bused, diskB.Bavail, diskB.Bpercent, diskDetails[i].Name, diskB.Bsize)
+				fmt.Fprintf(w, "%s  \t%d  \t%d  \t%d  \t%s  \t%s  \t%d  \n",
+					d.Partition, dB.Blocks, dB.Bused, dB.Bavail, dB.Bpercent, d.Name, dB.Bsize)
 			}
 		}
 	}

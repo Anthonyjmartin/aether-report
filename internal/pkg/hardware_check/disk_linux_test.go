@@ -171,66 +171,6 @@ func Test_checkAlert(t *testing.T) {
 	}
 }
 
-func Test_convertSize(t *testing.T) {
-	type args struct {
-		Blocks uint64
-		Bsize  int64
-	}
-	tests := []struct {
-		name             string
-		args             args
-		wantSizeAsString string
-	}{
-		{
-			name: "Return Bytes",
-			args: args{
-				Blocks: 0,
-				Bsize:  4096,
-			},
-			wantSizeAsString: "0.00B",
-		},
-		{
-			name: "Return KiloBytes",
-			args: args{
-				Blocks: 1,
-				Bsize:  4096,
-			},
-			wantSizeAsString: "4.00KB",
-		},
-		{
-			name: "Return MegaBytes",
-			args: args{
-				Blocks: 1024,
-				Bsize:  4096,
-			},
-			wantSizeAsString: "4.00MB",
-		},
-		{
-			name: "Return GigaBytes",
-			args: args{
-				Blocks: 1048576,
-				Bsize:  4096,
-			},
-			wantSizeAsString: "4.00GB",
-		},
-		{
-			name: "Return TeraBytes",
-			args: args{
-				Blocks: 1073741824,
-				Bsize:  4096,
-			},
-			wantSizeAsString: "4.00TB",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotSizeAsString := convertSize(tt.args.Blocks, tt.args.Bsize); gotSizeAsString != tt.wantSizeAsString {
-				t.Errorf("convertSize() = %v, want %v", gotSizeAsString, tt.wantSizeAsString)
-			}
-		})
-	}
-}
-
 func Test_getDiskInfo(t *testing.T) {
 	type args struct {
 		mount        string
@@ -568,6 +508,123 @@ func TestRunDiskInfo(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotJsonReturn, tt.wantJsonReturn) {
 				t.Errorf("RunDiskInfo() = %v, want %v", gotJsonReturn, tt.wantJsonReturn)
+			}
+		})
+	}
+}
+
+func TestDiskDetails_humanReadable(t *testing.T) {
+	type fields struct {
+		Name          string
+		Partition     string
+		PartitionType string
+		ReadOnly      bool
+		Blocks        DiskBlocks
+		Inodes        DiskInodes
+	}
+	byteTest := fields{
+		Blocks: DiskBlocks{
+			Blocks: 0,
+			Bsize:  4096,
+		},
+	}
+	kiloByteTest := fields{
+		Blocks: DiskBlocks{
+			Blocks: 1,
+			Bsize:  4096,
+		},
+	}
+	megaByteTest := fields{
+		Blocks: DiskBlocks{
+			Blocks: 1024,
+			Bused:  1024,
+			Bavail: 1024,
+			Bsize:  4096,
+		},
+	}
+	gigaByteTest := fields{
+		Blocks: DiskBlocks{
+			Blocks: 1048576,
+			Bsize:  4096,
+		},
+	}
+	teraByteTest := fields{
+		Blocks: DiskBlocks{
+			Blocks: 1073741824,
+			Bsize:  4096,
+		},
+	}
+	type args struct {
+		metric string
+	}
+	tests := []struct {
+		name             string
+		fields           fields
+		args             args
+		wantSizeAsString string
+	}{
+		{
+			name:             "Return Bytes blank metric",
+			fields:           byteTest,
+			wantSizeAsString: "0.00B",
+		},
+		{
+			name:             "Return KiloBytes blank metric",
+			fields:           kiloByteTest,
+			wantSizeAsString: "4.00KB",
+		},
+		{
+			name:             "Return MegaBytes blank metric",
+			fields:           megaByteTest,
+			wantSizeAsString: "4.00MB",
+		},
+		{
+			name:             "Return GigaBytes blank metric",
+			fields:           gigaByteTest,
+			wantSizeAsString: "4.00GB",
+		},
+		{
+			name:             "Return TeraBytes blank metric",
+			fields:           teraByteTest,
+			wantSizeAsString: "4.00TB",
+		},
+		{
+			name:   "Return MegaBytes total metric",
+			fields: megaByteTest,
+			args: args{
+				metric: "total",
+			},
+			wantSizeAsString: "4.00MB",
+		},
+		{
+			name:   "Return MegaBytes used metric",
+			fields: megaByteTest,
+			args: args{
+				metric: "used",
+			},
+			wantSizeAsString: "4.00MB",
+		},
+		{
+			name:   "Return MegaBytes available metric",
+			fields: megaByteTest,
+			args: args{
+				metric: "available",
+			},
+			wantSizeAsString: "4.00MB",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := DiskDetails{
+				Name:          tt.fields.Name,
+				Partition:     tt.fields.Partition,
+				PartitionType: tt.fields.PartitionType,
+				ReadOnly:      tt.fields.ReadOnly,
+				Blocks:        tt.fields.Blocks,
+				Inodes:        tt.fields.Inodes,
+			}
+			if gotSizeAsString := d.humanReadable(tt.args.metric); gotSizeAsString != tt.wantSizeAsString {
+				t.Errorf("DiskDetails.humanReadable() = %v, want %v", gotSizeAsString, tt.wantSizeAsString)
 			}
 		})
 	}
