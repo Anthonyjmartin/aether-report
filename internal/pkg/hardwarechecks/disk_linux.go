@@ -1,10 +1,10 @@
-package hardware_check
+package hardwarechecks
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"gitlab.com/anthony.j.martin/aether-report/internal/pkg/util_funcs"
+	"gitlab.com/anthony.j.martin/aether-report/internal/pkg/utilfuncs"
 	"io"
 	"os"
 	"regexp"
@@ -14,6 +14,7 @@ import (
 	"text/tabwriter"
 )
 
+//ValidDisks a disk determined to be valid for checking.
 type ValidDisks struct {
 	Partition string `json:"partition"`
 	Mount     string `json:"mount"`
@@ -21,6 +22,7 @@ type ValidDisks struct {
 	Options   string `json:"options"`
 }
 
+//DiskBlocks block details for a disk
 type DiskBlocks struct {
 	Blocks   uint64 `json:"blocks"`
 	Bsize    int64  `json:"block_size"`
@@ -31,6 +33,7 @@ type DiskBlocks struct {
 	Balert   string `json:"blocks_alert"`
 }
 
+//DiskInodes inode details for a disk
 type DiskInodes struct {
 	Inodes   uint64 `json:"inodes"`
 	Ifree    uint64 `json:"inodes_free"`
@@ -39,6 +42,7 @@ type DiskInodes struct {
 	Ialert   string `json:"inodes_alert"`
 }
 
+//DiskDetails full details for a scanned disk
 type DiskDetails struct {
 	Name          string     `json:"name"`
 	Partition     string     `json:"partition"`
@@ -78,6 +82,7 @@ func (d DiskDetails) humanReadable(metric string) (sizeAsString string) {
 	return sizeAsString
 }
 
+// Human readable disk sizes
 const (
 	B  = 1
 	KB = B << 10
@@ -193,12 +198,10 @@ func getDiskInfo(mount string, fakeDiskInfo syscall.Statfs_t) (fs syscall.Statfs
 	fs = syscall.Statfs_t{}
 	if fakeDiskInfo == fs {
 		err = syscall.Statfs(mount, &fs)
-		return
 	} else {
 		fs, err = fakeDiskInfo, nil
-		return
-
 	}
+	return
 }
 
 //  Return strings from file that contain valid disk information.
@@ -211,7 +214,7 @@ func parseDiskFile(inFile io.Reader) ([]ValidDisks, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		data := strings.Fields(line)
-		if !skipMountRegex.MatchString(data[1]) && !util_funcs.StringInSlice(data[2], excludedFsTypes) {
+		if !skipMountRegex.MatchString(data[1]) && !utilfuncs.StringInSlice(data[2], excludedFsTypes) {
 			diskString := ValidDisks{
 				Partition: data[0],
 				Mount:     data[1],
@@ -309,10 +312,9 @@ func textOutput(humanRead, inode bool, diskFile string, testDiskInfo syscall.Sta
 	return nil
 }
 
-// Process data based on passed variables.
 func RunDiskInfo(outputFmt string, humanRead, inode bool, diskFile string, fakeDiskInfo syscall.Statfs_t) (jsonReturn []byte, err, textReturn error) {
 	if humanRead && inode {
-		err = fmt.Errorf("\nError: Cannot use both -h and -i  flags.\n\nRun 'aether-report COMMAND --help' for more information on a command.")
+		err = fmt.Errorf("\nError: Cannot use both -h and -i  flags.\n\nRun 'aether-report COMMAND --help' for more information on a command")
 		return
 	}
 	if outputFmt == "text" {

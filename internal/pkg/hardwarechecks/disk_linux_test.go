@@ -1,4 +1,4 @@
-package hardware_check
+package hardwarechecks
 
 import (
 	"encoding/json"
@@ -442,12 +442,12 @@ func TestRunDiskInfo(t *testing.T) {
 	},
 	)
 	jsonCheckData, _ := getMounts(mockDiskFile, fakeStatfs)
-	convertedJson, _ := json.Marshal(jsonCheckData)
+	convertedJSON, _ := json.Marshal(jsonCheckData)
 
 	tests := []struct {
 		name           string
 		args           args
-		wantJsonReturn []byte
+		wantJSONReturn []byte
 		wantErr        bool
 	}{
 		{
@@ -459,7 +459,7 @@ func TestRunDiskInfo(t *testing.T) {
 				diskFile:     mockDiskFile,
 				fakeDiskInfo: fakeStatfs,
 			},
-			wantJsonReturn: nil,
+			wantJSONReturn: nil,
 			wantErr:        false,
 		},
 		{
@@ -471,7 +471,7 @@ func TestRunDiskInfo(t *testing.T) {
 				diskFile:     mockDiskFile,
 				fakeDiskInfo: fakeStatfs,
 			},
-			wantJsonReturn: convertedJson,
+			wantJSONReturn: convertedJSON,
 			wantErr:        false,
 		},
 		{
@@ -483,7 +483,7 @@ func TestRunDiskInfo(t *testing.T) {
 				diskFile:     mockDiskFile,
 				fakeDiskInfo: fakeStatfs,
 			},
-			wantJsonReturn: nil,
+			wantJSONReturn: nil,
 			wantErr:        true,
 		},
 		{
@@ -495,19 +495,19 @@ func TestRunDiskInfo(t *testing.T) {
 				diskFile:     "/fake/test",
 				fakeDiskInfo: syscall.Statfs_t{},
 			},
-			wantJsonReturn: nil,
+			wantJSONReturn: nil,
 			wantErr:        true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotJsonReturn, err, _ := RunDiskInfo(tt.args.outputFmt, tt.args.humanRead, tt.args.inode, tt.args.diskFile, tt.args.fakeDiskInfo)
+			gotJSONReturn, err, _ := RunDiskInfo(tt.args.outputFmt, tt.args.humanRead, tt.args.inode, tt.args.diskFile, tt.args.fakeDiskInfo)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RunDiskInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotJsonReturn, tt.wantJsonReturn) {
-				t.Errorf("RunDiskInfo() = %v, want %v", gotJsonReturn, tt.wantJsonReturn)
+			if !reflect.DeepEqual(gotJSONReturn, tt.wantJSONReturn) {
+				t.Errorf("RunDiskInfo() = %v, want %v", gotJSONReturn, tt.wantJSONReturn)
 			}
 		})
 	}
