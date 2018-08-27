@@ -6,15 +6,15 @@ node {
       }
 
       stage('Build GO image') {
-        def majMinVer = sh returnStdout: true, script: """echo v.0.1"""
-        def appVer = sh returnStdout: true, script: """echo ${env.majMinVer}.${env.BUILD_ID}"""
+        def majMinVer = sh (returnStdout: true, script: "./version.sh").trim()
+        def appVer = sh (returnStdout: true, script: "echo ${env.majMinVer}.${env.BUILD_ID}")
         def testImage = docker.build("aether-report:${env.appVer}", "--build-arg version=${env.appVer}")
       }
 
       stage('Test'){
         testImage.inside("-v $PWD:/go/src/gitlab.com/anthony.j.martin/aether-report"){
           //List all our project files with 'go list ./... | grep -v /vendor/ | grep -v github.com | grep -v golang.org'
-          def paths = sh 'go list ./... | grep -v /vendor/ | grep -v github.com | grep -v golang.org'
+          def paths = sh (returnStdout: true, script: 'go list ./... | grep -v /vendor/ | grep -v github.com | grep -v golang.org')
 
           echo 'Vetting'
 
@@ -33,11 +33,11 @@ node {
           echo 'Building Executable'
 
           //Produced binary is $GOPATH/src/cmd/project/project
-          sh """cd $GOPATH/src/gitlab.com/anthony.j.martin/aether-report && go build -a -v -o build/linux/amd64/aether-report -ldflags '-X main.version=${env.appVer}' cmd/aether-report/main.go"""
+          sh "cd $GOPATH/src/gitlab.com/anthony.j.martin/aether-report && go build -a -v -o build/linux/amd64/aether-report -ldflags '-X main.version=${env.appVer}' cmd/aether-report/main.go"
         }
         def rpmImage = docker.build("aether-report:${env.appVer}", "-f ./Dockerfile.RPM --build-arg version=${env.appVer}")
         rpmImage.inside("-v $PWD:/go/src/gitlab.com/anthony.j.martin/aether-report"){
-          sh """cd $GOPATH/src/gitlab.com/anthony.j.martin/aether-report && go-bin-rpm generate -a amd64 -o build/linux/amd64/aether-report-${env.appVer}.rpm --version ${env.appVer}"""
+          sh "cd $GOPATH/src/gitlab.com/anthony.j.martin/aether-report && go-bin-rpm generate -a amd64 -o build/linux/amd64/aether-report-${env.appVer}.rpm --version ${env.appVer}"
         }
       }
     }catch (e) {
