@@ -6,7 +6,7 @@ node {
       }
 
       stage('Build GO image') {
-        def majMinVer = sh returnStdout: true, script: """./version.sh"""
+        def majMinVer = sh returnStdout: true, script: """echo v.0.1"""
         def appVer = sh returnStdout: true, script: """echo ${env.majMinVer}.${env.BUILD_ID}"""
         def testImage = docker.build("aether-report:${env.appVer}", "--build-arg version=${env.appVer}")
       }
