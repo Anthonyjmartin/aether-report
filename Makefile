@@ -14,7 +14,7 @@ test: ## Run unittests
 	@go test -short ${PKG_LIST}
 
 test-junit: ## Run unittests and convert to junit
-	@go test -short ${PKG_LIST} 2>&1 | go-junit-report > report.xml
+	@$(shell go test -short ${PKG_LIST} 2>&1 | go-junit-report > report.xml)
 
 race: dep ## Run data race detector
 	@go test -race -short ${PKG_LIST}
