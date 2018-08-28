@@ -18,7 +18,8 @@ node('compose') {
         stage('Test and Lint'){
           sh "cd ${env.PDIR} && go test -cover ./..."
           sh "cd ${env.PDIR} && go tool vet ./"
-          sh "cd ${env.PDIR} && golint ./..."
+          env.paths = sh (returnStdout: true, script: "cd ${env.PDIR} && go list ./...").trim()
+          sh "cd ${env.PDIR} && golint ${env.paths}"
         }
         stage('Build Executable'){
           sh "cd ${env.PDIR} && go build -a -v -o build/linux/amd64/aether-report -ldflags '-X main.version=${env.appVer}' cmd/aether-report/main.go"
