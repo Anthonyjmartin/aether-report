@@ -53,8 +53,8 @@ code_coverage_report:
   stage: test
   script:
   - make coverhtml
-  only:
-  - master
+#  only:
+#  - master
 
 lint_code:
   tags:
