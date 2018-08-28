@@ -3,6 +3,7 @@
   "summary": "Report system information",
   "description": "Report system information such as disk, cpu, docker, etc.",
   "version": "!version!",
+  "release": "!release!",
   "arch": "!arch!",
   "license": "GPLv3",
   "changelog-cmd": "changelog rpm",
