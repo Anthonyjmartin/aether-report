@@ -312,6 +312,7 @@ func textOutput(humanRead, inode bool, diskFile string, testDiskInfo syscall.Sta
 	return nil
 }
 
+//RunDiskInfo handles getting disk info based of passed parameters.
 func RunDiskInfo(outputFmt string, humanRead, inode bool, diskFile string, fakeDiskInfo syscall.Statfs_t) (jsonReturn []byte, err, textReturn error) {
 	if humanRead && inode {
 		err = fmt.Errorf("\nError: Cannot use both -h and -i  flags.\n\nRun 'aether-report COMMAND --help' for more information on a command")

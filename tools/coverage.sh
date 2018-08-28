@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Code coverage generation
+# Code coverage generation tool
 
 COVERAGE_DIR="${COVERAGE_DIR:-coverage}"
 PKG_LIST=$(go list ./... | grep -v /vendor/)
