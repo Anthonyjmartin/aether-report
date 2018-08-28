@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"gitlab.com/anthony.j.martin/aether-report/internal/pkg/utilfuncs"
+	"gitlab.com/anthony.j.martin/aether-report/utilfuncs"
 	"io"
 	"os"
 	"regexp"

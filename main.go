@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/urfave/cli"
-	"gitlab.com/anthony.j.martin/aether-report/internal/pkg/hardwarechecks"
+	"gitlab.com/anthony.j.martin/aether-report/hardwarechecks"
 	"os"
 	"syscall"
 	"time"
