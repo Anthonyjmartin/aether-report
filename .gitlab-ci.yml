@@ -1,4 +1,4 @@
-image: golang:1.10
+image: registry.gitlab.com/anthony.j.martin/aether-report/build-test:latest
 
 cache:
   paths:
