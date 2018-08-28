@@ -2,7 +2,7 @@ PROJECT_NAME := "aether-report"
 PKG := "gitlab.com/anthony.j.martin/$(PROJECT_NAME)"
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
-src/gitlab.com/anthony.j.martin/aether-report
+
 .PHONY: all dep build clean test coverage coverhtml lint
 
 all: build
