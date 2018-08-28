@@ -11,6 +11,7 @@ cache:
 stages:
 - test
 - build
+- deploy
 
 before_script:
 - mkdir -p /go/src/gitlab.com/anthony.j.martin /go/src/_/builds
@@ -25,6 +26,16 @@ unit_tests:
   stage: test
   script:
   - make test
+
+junit_tests:
+  tags:
+  - docker
+  stage: test
+  script:
+  - make test-junit
+  artifacts:
+    reports:
+      junit: report.xml
 
 race_detector:
   tags:

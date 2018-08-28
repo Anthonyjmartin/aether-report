@@ -5,7 +5,8 @@ MAINTAINER Anthony Martin <anthony.j.martin142@gmail.com>
 # Install golint
 ENV GOPATH /go
 ENV PATH ${GOPATH}/bin:$PATH
-RUN go get -u github.com/golang/lint/golint
+RUN go get -u github.com/golang/lint/golint; \
+    go get -u github.com/jstemmer/go-junit-report
 
 # Add apt key for LLVM repository
 RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
