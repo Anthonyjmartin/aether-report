@@ -20,26 +20,36 @@ before_script:
 - make dep
 
 unit_tests:
+  tags:
+  - docker
   stage: test
   script:
   - make test
 
 race_detector:
+  tags:
+  - docker
   stage: test
   script:
   - make race
 
 memory_sanitizer:
+  tags:
+  - docker
   stage: test
   script:
   - make msan
 
 code_coverage:
+  tags:
+  - docker
   stage: test
   script:
   - make coverage
 
 code_coverage_report:
+  tags:
+  - docker
   stage: test
   script:
   - make coverhtml
@@ -47,11 +57,15 @@ code_coverage_report:
   - master
 
 lint_code:
+  tags:
+  - docker
   stage: test
   script:
   - make lint
 
 build:
+  tags:
+  - docker
   stage: build
   script:
   - make
