@@ -27,15 +27,15 @@ unit_tests:
   script:
   - make test
 
-junit_tests:
-  tags:
-  - docker
-  stage: test
-  script:
-  - make test-junit
-  artifacts:
-    reports:
-      junit: report.xml
+#junit_tests:
+#  tags:
+#  - docker
+#  stage: test
+#  script:
+#  - make test-junit
+#  artifacts:
+#    reports:
+#      junit: report.xml
 
 race_detector:
   tags:
