@@ -1,6 +1,7 @@
 PROJECT_NAME := "aether-report"
 PKG := "gitlab.com/anthony.j.martin/$(PROJECT_NAME)"
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
+PKG_VER := $(shell tools/version.sh)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 
 .PHONY: all dep build clean test coverage coverhtml lint
@@ -12,9 +13,6 @@ lint: ## Lint the files
 
 test: ## Run unittests
 	@go test -short ${PKG_LIST}
-
-test-junit: ## Run unittests and convert to junit
-	@$(shell go test -short ${PKG_LIST} 2>&1 | go-junit-report > report.xml)
 
 race: dep ## Run data race detector
 	@go test -race -short ${PKG_LIST}
@@ -37,6 +35,9 @@ build: dep ## Build the binary file
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
+
+version: ## Display app version
+	@echo $(PKG_VER)
 
 help: ## Display this help screen
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

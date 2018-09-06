@@ -14,4 +14,6 @@ docker run --rm -i -v $PWD:/go/src/gitlab.com/anthony.j.martin/aether-report aet
 
 #GOOS=linux go build -a -o build/linux/amd64/aether-report -ldflags="-X main.version=${APPVER}"  cmd/aether-report/main.go
 rsync -av --progress build/* ~/Dropbox/gotesting/ --exclude .hold
-a
+
+
+go-bin-rpm generate -a amd64 -o build/linux/amd64/aether-report-$(./tools/version.sh).rpm --version $(./tools/version.sh)

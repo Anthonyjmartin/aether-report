@@ -64,8 +64,11 @@ code_coverage_report:
   stage: test
   script:
   - make coverhtml
-#  only:
-#  - master
+  artifacts:
+    paths:
+    - coverage.html
+  only:
+  - master
 
 lint_code:
   tags:
@@ -74,7 +77,7 @@ lint_code:
   script:
   - make lint
 
-build:
+build_binary:
   tags:
   - docker
   stage: build
@@ -83,3 +86,18 @@ build:
   artifacts:
     paths:
     - aether-report
+
+build_rpm:
+  tags:
+    - docker
+  image: registry.gitlab.com/anthony.j.martin/aether-report/rpm-builder:latest
+  stage: deploy
+  variables:
+    APPVER: './tools/version.sh'
+  script:
+  - go-bin-rpm generate -a amd64 -o aether-report-$APPVER-$CI_PIPELINE_ID.rpm --version $APPVER-$CI_PIPELINE_ID
+  - curl -fL https://getcli.jfrog.io | sh
+  - ./jfrog u --user $BINTRAY_USER --key $BINTRAY_KEY --publish "aether-report*.rpm" $BINTRAY_URL/$APPVER-$CI_PIPELINE_ID
+  artifacts:
+    paths:
+    - aether-report*.rpm
