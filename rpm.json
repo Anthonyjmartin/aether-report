@@ -3,15 +3,16 @@
   "summary": "Report system information",
   "description": "Report system information such as disk, cpu, docker, etc.",
   "version": "!version!",
+  "release": "!release!",
   "arch": "!arch!",
   "license": "GPLv3",
   "changelog-cmd": "changelog rpm",
   "url": "https://gitlab.com/anthony.j.martin/aether-report",
   "files": [
     {
-      "from": "build/linux/!arch!/aether-report",
+      "from": "aether-report",
       "to": "%{_bindir}/",
-      "base": "build/linux/!arch!/",
+      "base": "",
       "type": ""
     }
   ]

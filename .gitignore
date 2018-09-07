@@ -37,7 +37,6 @@ fabric.properties
 
 # IntelliJ project files
 .idea
-*.iml
 out
 gen### Go template
 # Binaries for programs and plugins
@@ -118,3 +117,4 @@ Temporary Items
 .apdisk
 pkg-build/
 **/coverage.html
+/report.xml
