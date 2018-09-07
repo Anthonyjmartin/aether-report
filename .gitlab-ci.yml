@@ -97,7 +97,6 @@ build_rpm:
     JFROG_CLI_OFFER_CONFIG: 1
   before_script:
   - mkdir -p /go/src/gitlab.com/anthony.j.martin /go/src/_/builds
-  - mkdir -p $JFROG_CLI_HOME
   - cp -r $CI_PROJECT_DIR /go/src/gitlab.com/anthony.j.martin/aether-report
   - ln -s /go/src/gitlab.com/anthony.j.martin /go/src/_/builds/anthony.j.martin
   script:
