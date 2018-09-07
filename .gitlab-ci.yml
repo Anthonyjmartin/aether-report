@@ -107,7 +107,7 @@ build_rpm:
   - go-bin-rpm generate -a amd64 -o aether-report-$(./tools/version.sh)-$CI_PIPELINE_ID.rpm --version $(./tools/version.sh)
   - curl -fL https://getcli.jfrog.io | sh
   - ./jfrog bt c --user $BINTRAY_USER --key $BINTRAY_KEY --licenses=GPL-3.0 --interactive=false
-  - ./jfrog bt vc --key $BINTRAY_KEY  $BINTRAY_URL$(./tools/version.sh)
+  - ./jfrog bt vc $BINTRAY_URL$(./tools/version.sh)
   - ./jfrog bt u --user $BINTRAY_USER --key $BINTRAY_KEY --publish "aether-report*.rpm" $BINTRAY_URL$(./tools/version.sh)
   artifacts:
     paths:
