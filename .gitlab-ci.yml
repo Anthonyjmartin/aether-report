@@ -95,7 +95,7 @@ build_rpm:
   variables:
     JFROG_CLI_LOG_LEVEL: DEBUG
     JFROG_CLI_HOME: /go/src/gitlab.com/anthony.j.martin/aether-report/.jfrog
-    JFROG_CLI_OFFER_CONFIG: false
+    JFROG_CLI_OFFER_CONFIG: 0
   before_script:
   - mkdir -p /go/src/gitlab.com/anthony.j.martin /go/src/_/builds
   - mkdir -p $JFROG_CLI_HOME
