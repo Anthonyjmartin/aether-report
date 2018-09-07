@@ -99,6 +99,7 @@ build_rpm:
   - cp -r $CI_PROJECT_DIR /go/src/gitlab.com/anthony.j.martin/aether-report
   - ln -s /go/src/gitlab.com/anthony.j.martin /go/src/_/builds/anthony.j.martin
   script:
+  - echo $APPVER-$CI_PIPELINE_ID
   - go-bin-rpm generate -a amd64 -o aether-report-$APPVER-$CI_PIPELINE_ID.rpm --version $APPVER-$CI_PIPELINE_ID
   - curl -fL https://getcli.jfrog.io | sh
   - ./jfrog u --user $BINTRAY_USER --key $BINTRAY_KEY --publish "aether-report*.rpm" $BINTRAY_URL/$APPVER-$CI_PIPELINE_ID
