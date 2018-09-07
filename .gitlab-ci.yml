@@ -97,6 +97,8 @@ build_rpm:
   - curl -fL https://getcli.jfrog.io | sh
   - ./jfrog bt c --user $BINTRAY_USER --key $BINTRAY_KEY --licenses=GPL-3.0 --interactive=false
   - ./jfrog bt upload --publish "aether-report*.rpm" $BINTRAY_URL$(./tools/version.sh)-$CI_PIPELINE_ID
+  only:
+    - master
   artifacts:
     paths:
     - aether-report*.rpm
