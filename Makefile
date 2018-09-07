@@ -31,7 +31,7 @@ dep: ## Get the dependencies
 	@go get -u github.com/golang/lint/golint
 
 build: dep ## Build the binary file
-	@go build -i -v $(PKG) -ldflags="-X main.version=${PKG_VER}"
+	@go build -i -ldflags="-X main.version=${PKG_VER}" -v $(PKG)
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
