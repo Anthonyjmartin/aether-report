@@ -109,7 +109,7 @@ build_rpm:
   - echo $BINTRAY_URL$(./tools/version.sh)-$CI_PIPELINE_ID
 #  - ./jfrog bt c --user $BINTRAY_USER --key $BINTRAY_KEY --licenses=GPL-3.0 --interactive=false
 #  - ./jfrog bt vc --user=$BINTRAY_USER --key=$BINTRAY_KEY $BINTRAY_URL$(./tools/version.sh)-$CI_PIPELINE_ID
-  - ./jfrog bt u --user $BINTRAY_USER --key $BINTRAY_KEY --licenses=GPL-3.0 --interactive=false --publish "aether-report*.rpm" $BINTRAY_URL$(./tools/version.sh)-$CI_PIPELINE_ID
+  - ./jfrog bt u --user=$BINTRAY_USER --key=$BINTRAY_KEY --licenses=GPL-3.0 --publish "aether-report*.rpm" $BINTRAY_URL$(./tools/version.sh)-$CI_PIPELINE_ID
   artifacts:
     paths:
     - aether-report*.rpm
