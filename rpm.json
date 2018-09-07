@@ -10,9 +10,9 @@
   "url": "https://gitlab.com/anthony.j.martin/aether-report",
   "files": [
     {
-      "from": "build/linux/!arch!/aether-report",
+      "from": "aether-report",
       "to": "%{_bindir}/",
-      "base": "build/linux/!arch!/",
+      "base": "",
       "type": ""
     }
   ]
