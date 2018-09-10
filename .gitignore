@@ -118,3 +118,4 @@ Temporary Items
 pkg-build/
 **/coverage.html
 /report.xml
+.vscode/

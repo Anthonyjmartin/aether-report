@@ -1,6 +1,6 @@
 # Base image: https://hub.docker.com/_/golang/
-FROM golang:1.10
-MAINTAINER Anthony Martin <anthony.j.martin142@gmail.com>
+FROM golang:1.11
+LABEL maintainer="Anthony Martin <anthony.j.martin142@gmail.com>"
 
 ENV GOPATH /go
 ENV PATH ${GOPATH}/bin:$PATH
