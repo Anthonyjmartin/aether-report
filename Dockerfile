@@ -7,15 +7,11 @@ ENV PATH ${GOPATH}/bin:$PATH
 RUN go get -u github.com/golang/lint/golint
 
 RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -; \
-    echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-5.0 main" | tee -a /etc/apt/sources.list
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+    echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-5.0 main" | tee -a /etc/apt/sources.list; \
+    apt-get update && apt-get install -y --no-install-recommends \
     clang-5.0 \
-    rpm \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
-    curl -L https://raw.githubusercontent.com/mh-cbon/latest/master/install.sh | GH=mh-cbon/go-bin-rpm sh -xe; \
-    curl -L https://raw.githubusercontent.com/mh-cbon/latest/master/install.sh | GH=mh-cbon/changelog sh -xe
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; 
 
 # Set Clang as default CC
 ENV set_clang /etc/profile.d/set-clang-cc.sh
