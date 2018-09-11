@@ -119,3 +119,4 @@ pkg-build/
 **/coverage.html
 /report.xml
 .vscode/
+/aether-report
