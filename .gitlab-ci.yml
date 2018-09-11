@@ -18,7 +18,6 @@ before_script:
 - cp -r $CI_PROJECT_DIR /go/src/gitlab.com/anthony.j.martin/aether-report
 - ln -s /go/src/gitlab.com/anthony.j.martin /go/src/_/builds/anthony.j.martin
 - export CC=clang-5.0
-- make dep
 
 unit_tests:
   tags:
