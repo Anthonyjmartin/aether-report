@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"gitlab.com/anthony.j.martin/aether-report/utilfuncs"
+	"gitlab.com/anthony.j.martin/aether-report/internal/general"
 	"io"
 	"os"
 	"regexp"
@@ -67,29 +67,11 @@ func (d DiskDetails) humanReadable(metric string) (sizeAsString string) {
 		sizedBlocks = float64(d.Blocks.Blocks * uint64(d.Blocks.Bsize))
 	}
 
-	switch {
-	case sizedBlocks >= TB:
-		sizeAsString = fmt.Sprintf("%.2fTB", sizedBlocks/float64(TB))
-	case sizedBlocks >= GB:
-		sizeAsString = fmt.Sprintf("%.2fGB", sizedBlocks/float64(GB))
-	case sizedBlocks >= MB:
-		sizeAsString = fmt.Sprintf("%.2fMB", sizedBlocks/float64(MB))
-	case sizedBlocks >= KB:
-		sizeAsString = fmt.Sprintf("%.2fKB", sizedBlocks/float64(KB))
-	default:
-		sizeAsString = fmt.Sprintf("%.2fB", sizedBlocks)
-	}
+	sizeAsString = general.HumanReadableFormat(sizedBlocks)
 	return sizeAsString
 }
 
-// Human readable disk sizes
-const (
-	B  = 1
-	KB = B << 10
-	MB = KB << 10
-	GB = MB << 10
-	TB = GB << 10
-)
+
 
 var excludedFsTypes = []string{
 	"autofs",
@@ -214,7 +196,7 @@ func parseDiskFile(inFile io.Reader) ([]ValidDisks, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		data := strings.Fields(line)
-		if !skipMountRegex.MatchString(data[1]) && !utilfuncs.StringInSlice(data[2], excludedFsTypes) {
+		if !skipMountRegex.MatchString(data[1]) && !general.StringInSlice(data[2], excludedFsTypes) {
 			diskString := ValidDisks{
 				Partition: data[0],
 				Mount:     data[1],
@@ -251,7 +233,7 @@ func checkAlert(blocks, blocksAvail, inodes, inodesFree uint64, blockSize int64)
 	_, iPercent := getPercent(inodes, inodesFree)
 
 	switch {
-	case bPercent < 90 || bAvail >= 20*GB && bPercent < 95:
+	case bPercent < 90 || bAvail >= 20*general.GB && bPercent < 95:
 		blockAlert = "ok"
 	case bPercent >= 90 && bPercent < 95:
 		blockAlert = "warn"
